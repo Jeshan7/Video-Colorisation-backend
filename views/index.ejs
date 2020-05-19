@@ -1,88 +1,92 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/css/materialize.min.css"
+    />
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/css/materialize.min.css">
+    <title>Node File Uploads</title>
+  </head>
 
-  <title>Node File Uploads</title>
-  
-</head>
-
-<body style="background-color:white;">
-
-  
-  <div class="container">
-    <h1>Greyscale Video Colourisation</h1>
-    <div class="section card-panel">
-      <h4 style="color: black;">File Upload</h4>
-      <%= typeof msg != 'undefined' ? msg : '' %>
-      <form action="/upload" method="POST" enctype="multipart/form-data">
-        <div class="file-field input-field">
-          <div class="btn grey">
-            <span>File</span>
-            <input name="uploadedVideo" type="file" accept="video/mp4">
-          </div>
-          <div class="file-path-wrapper">
-            <input class="file-path validate" type="text">
-          </div>
-        </div>
-        <button type="submit" class="btn">Upload</button>
-      </form>
-      <form action="/download" method="GET" enctype="multipart/form-data">
-        <button type="submit" class="btn">Download</button>
-      </form>
-    </div>
-
-
-    <div>
-      <% if (typeof file !== 'undefined') { %>
+  <body style="background-color: white;">
+    <div class="container">
+      <h1>Greyscale Video Colourisation</h1>
       <div class="section card-panel">
-        <h5>Greyscale Video</h5>
-        <video class="responsive-video" autoplay muted loop>
-          <source src="<%= file %>" type="video/mp4">
-          Your browser does not support the video tag.
-        </video>
-      </div>
-      
-      <div class="section card-panel" id="v2" style="visibility:hidden">
-        <h5>Coloured Video</h5>
-        <div class="preloader-wrapper big active container" id="loader" style="visibility: visible; margin-left: 47%; ">
-          <div class="spinner-layer spinner-blue-only">
-            <div class="circle-clipper left">
-              <div class="circle"></div>
-            </div><div class="gap-patch">
-              <div class="circle"></div>
-            </div><div class="circle-clipper right">
-              <div class="circle"></div>
+        <h4 style="color: black;">File Upload</h4>
+        <%= typeof msg != 'undefined' ? msg : '' %>
+        <form action="/upload" method="POST" enctype="multipart/form-data">
+          <div class="file-field input-field">
+            <div class="btn grey">
+              <span>File</span>
+              <input name="uploadedVideo" type="file" accept="video/mp4" />
+            </div>
+            <div class="file-path-wrapper">
+              <input class="file-path validate" type="text" />
             </div>
           </div>
-        </div>
-        <video class="responsive-video" autoplay muted loop >
-          <source src="../../colouredVideo.mp4" type="video/mp4">
-          Your browser does not support the video tag.
-        </video>
+          <button type="submit" class="btn">Upload</button>
+        </form>
+        <form action="/download" method="GET" enctype="multipart/form-data">
+          <button type="submit" class="btn">Download</button>
+          <a href="<=% url%>">Download</a>
+        </form>
       </div>
-      <%} else "" %>
+
+      <div>
+        <% if (typeof file !== 'undefined') { %>
+        <div class="section card-panel">
+          <h5>Greyscale Video</h5>
+          <video class="responsive-video" autoplay muted loop>
+            <source src="<%= file %>" type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
+        </div>
+
+        <div class="section card-panel" id="v2" style="visibility: hidden;">
+          <h5>Coloured Video</h5>
+          <div
+            class="preloader-wrapper big active container"
+            id="loader"
+            style="visibility: visible; margin-left: 47%;"
+          >
+            <div class="spinner-layer spinner-blue-only">
+              <div class="circle-clipper left">
+                <div class="circle"></div>
+              </div>
+              <div class="gap-patch">
+                <div class="circle"></div>
+              </div>
+              <div class="circle-clipper right">
+                <div class="circle"></div>
+              </div>
+            </div>
+          </div>
+          <video class="responsive-video" autoplay muted loop>
+            <source src="../public/downloads/coloredVideo.avi" type="video/avi" />
+            Your browser does not support the video tag.
+          </video>
+        </div>
+        <%} else "" %>
+      </div>
     </div>
-  </div>
 
+    <script>
+      var myVar = setInterval(myTimer, 5000);
 
-
-
-  <script>
-    var myVar = setInterval(myTimer, 5000);
-
-    function myTimer() {
-      document.getElementById("loader").style.visibility = "hidden";
-      document.getElementById("v2").style.visibility = "visible";
-    }
-  </script>
-  <script src="https://code.jquery.com/jquery-3.2.1.min.js"
-    integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/js/materialize.min.js"></script>
-</body>
-
+      function myTimer() {
+        document.getElementById("loader").style.visibility = "hidden";
+        document.getElementById("v2").style.visibility = "visible";
+      }
+    </script>
+    <script
+      src="https://code.jquery.com/jquery-3.2.1.min.js"
+      integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
+      crossorigin="anonymous"
+    ></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/js/materialize.min.js"></script>
+  </body>
 </html>

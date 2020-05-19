@@ -5,7 +5,8 @@ const path = require("path");
 const fs = require("fs");
 const readline = require("readline");
 const { google } = require("googleapis");
-
+// const download = require("download-file");
+const request = require("request");
 // Set The Storage Engine
 const storage = multer.diskStorage({
   destination: "./public/uploads/",
@@ -48,7 +49,9 @@ app.set("view engine", "ejs");
 // Public Folder
 app.use(express.static("./public"));
 
-app.get("/", (req, res) => res.render("index"));
+app.get("/", (req, res) => res.render("index", {
+
+}));
 
 app.post("/upload", (req, res) => {
   upload(req, res, (err) => {
@@ -75,7 +78,10 @@ app.post("/upload", (req, res) => {
   });
 });
 
-app.get("/download", (req, res) => {});
+app.get("/download", (req, res) => {
+  uploadToDrive("download");
+  res.redirect("/upload");
+});
 
 const uploadToDrive = (file) => {
   // If modifying these scopes, delete token.json.
@@ -84,14 +90,17 @@ const uploadToDrive = (file) => {
   // created automatically when the authorization flow completes for the first
   // time.
   const TOKEN_PATH = "token.json";
-
+  console.log("dds", file);
   // Load client secrets from a local file.
   fs.readFile("credentials.json", (err, content) => {
     if (err) return console.log("Error loading client secret file:", err);
     // Authorize a client with credentials, then call the Google Drive API.
-    authorize(JSON.parse(content), listFiles);
-    authorize(JSON.parse(content), getFile);
-    // authorize(JSON.parse(content), uploadFile);
+    if (file === "download") {
+      authorize(JSON.parse(content), listFiles);
+    } else {
+      authorize(JSON.parse(content), uploadFile);
+    }
+    // authorize(JSON.parse(content), getFile);
   });
 
   /**
@@ -164,17 +173,16 @@ const uploadToDrive = (file) => {
     drive.files.list(
       {
         pageSize: 10,
-        q: "name='Parent_AFD_1935998_972015142023947.pdf'",
+        q: "name='colorised.avi'",
         fields: "nextPageToken, files(id, name)",
       },
       (err, res) => {
         if (err) return console.log("The API returned an error: " + err);
         const files = res.data.files;
         if (files.length) {
-          console.log("Files:");
-          files.map((file) => {
-            getFile(auth, file.id); //get file
-          });
+          console.log("Files:", files[0].id);
+          const fileId = files[0].id;
+          getFile(auth, fileId);
         } else {
           console.log("No files found.");
         }
@@ -183,7 +191,6 @@ const uploadToDrive = (file) => {
   }
 
   function uploadFile(auth) {
-    // console.log("asa", file.fieldname);
     const drive = google.drive({ version: "v3", auth });
     var fileMetadata = {
       name: `${file.fieldname}.mp4`,
@@ -208,16 +215,20 @@ const uploadToDrive = (file) => {
       }
     );
   }
+
   function getFile(auth, fileId) {
+    console.log(fileId);
     const drive = google.drive({ version: "v3", auth });
-    drive.files.get({ fileId: fileId, fields: "*" }, (err, res) => {
-      if (err) return console.log("The API returned an error: " + err);
-      console.log(res.data);
-      // fs.writeFile('a.mp4', res.data, function (err) {
-      //   if (err) throw err;
-      //   console.log('File is created successfully.');
-      // }); 
-    });
+    var dest = fs.createWriteStream("./public/downloads/colorised.avi");
+    drive.files.get(
+      { fileId: fileId, fields: "*", alt: "media" },
+      { responseType: "stream" },
+      (err, res) => {
+        if (err) return console.log("The API returned an error: " + err);
+        console.log(res.data);
+        res.data.pipe(dest);
+      }
+    );
   }
 };
 
