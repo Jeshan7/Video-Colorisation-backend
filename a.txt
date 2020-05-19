@@ -1,0 +1,5 @@
+The model that will be utilized on this undertaking is the "Lab". 
+In 1976 the International Commission on Illumination (CIE)
+characterized the CIELAB shading space (otherwise called CIE L*a*b* or some of the time shortened as just "Lab" shading space). In L*a*b* color space L* refers to the softness and a* and b* to the green–red and blue-yellow shading segments respectively. 
+
+The shading space L * a * b * was made with the hypothesis of restricting hues, where simultaneously two hues can't be green and red, or yellow and blue. CIELAB was developed with the aim that it will be perceptually uniform for human shading vision, implying that a similar measure of numerical change in these qualities relates to about a similar measure of outwardly apparent change. 
