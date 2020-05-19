@@ -80,7 +80,7 @@ app.post("/upload", (req, res) => {
 
 app.get("/download", (req, res) => {
   uploadToDrive("download");
-  res.redirect("/upload");
+  res.render('/')
 });
 
 const uploadToDrive = (file) => {
@@ -122,14 +122,6 @@ const uploadToDrive = (file) => {
       if (err) return getAccessToken(oAuth2Client, callback);
       oAuth2Client.setCredentials(JSON.parse(token));
       callback(oAuth2Client);
-      // let file = listFiles(oAuth2Client);
-      // if (file) {
-      //  console.log("Faadd", file)
-      //   callback(
-      //     oAuth2Client,
-      //     "0B66-IoTK-_jcRjFvMmZOY2JsWVY0bDdoLVN5enFWeFJZWUJV"
-      //   ); //get file
-      // }
     });
   }
 
