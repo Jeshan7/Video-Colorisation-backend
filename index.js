@@ -5,8 +5,7 @@ const path = require("path");
 const fs = require("fs");
 const readline = require("readline");
 const { google } = require("googleapis");
-// const download = require("download-file");
-const request = require("request");
+
 // Set The Storage Engine
 const storage = multer.diskStorage({
   destination: "./public/uploads/",
@@ -79,8 +78,8 @@ app.post("/upload", (req, res) => {
 });
 
 app.get("/download", (req, res) => {
-  uploadToDrive("download");
-  res.render('/')
+   uploadToDrive("download");
+   res.redirect('/')
 });
 
 const uploadToDrive = (file) => {
@@ -209,7 +208,6 @@ const uploadToDrive = (file) => {
   }
 
   function getFile(auth, fileId) {
-    console.log(fileId);
     const drive = google.drive({ version: "v3", auth });
     var dest = fs.createWriteStream("./public/downloads/colorised.avi");
     drive.files.get(
@@ -217,7 +215,6 @@ const uploadToDrive = (file) => {
       { responseType: "stream" },
       (err, res) => {
         if (err) return console.log("The API returned an error: " + err);
-        console.log(res.data);
         res.data.pipe(dest);
       }
     );
