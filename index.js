@@ -5,101 +5,79 @@ const path = require("path");
 const fs = require("fs");
 const readline = require("readline");
 const { google } = require("googleapis");
+const cors = require("cors");
+var x = 1;
 
-// Set The Storage Engine
+const app = express();
+
+app.use(cors());
+
 const storage = multer.diskStorage({
   destination: "./public/uploads/",
   filename: function (req, file, cb) {
-    cb(null, file.fieldname + path.extname(file.originalname));
+    cb(null, "video.mp4");
   },
 });
 
-// Init Upload
 const upload = multer({
   storage: storage,
-  fileFilter: function (req, file, cb) {
-    checkFileType(file, cb);
-    uploadToDrive(file);
-  },
-}).single("uploadedVideo");
+  // fileFilter: function (req, file, cb) {
+  //   checkFileType(file, cb);
+  // }, 
+}).single("file");
 
-// Check File Type
-function checkFileType(file, cb) {
-  // Allowed ext
-  const filetypes = /mp4/;
-  // Check ext
-  const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-  // Check mime
-  const mimetype = filetypes.test(file.mimetype);
+// // Check File Type
+// function checkFileType(file, cb) {
+//   // Allowed ext
+//   const filetypes = /mp4/;
+//   // Check ext
+//   const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+//   // Check mime
+//   const mimetype = filetypes.test(file.mimetype);
 
-  if (mimetype && extname) {
-    return cb(null, true);
-  } else {
-    cb("Error: Videos Only!");
-  }
-}
+//   if (mimetype && extname) {
+//     return cb(null, true);
+//   } else {
+//     cb("Error: Videos Only!");
+//   }
+// }
 
-// Init app
-const app = express();
-
-// EJS
-app.set("view engine", "ejs");
-
-// Public Folder
-app.use(express.static("./public"));
-
-app.get("/", (req, res) => res.render("index", {
-
-}));
-
-app.post("/upload", (req, res) => {
-  upload(req, res, (err) => {
-    if (err) {
-      res.render("index", {
-        msg: err,
-      });
-    } else {
-      if (req.file == undefined) {
-        res.render(
-          "index",
-          {
-            msg: "Error: No File Selected!",
-          },
-          { path: req.file.path }
-        );
-      } else {
-        res.render("index", {
-          msg: "File Uploaded!",
-          file: `uploads/${req.file.filename}`,
-        });
-      }
-    }
+app.get("/", (req, res) => {
+  res.status(200).json({
+    message: "Hello",
   });
 });
 
+app.post("/upload", upload, (req, res) => {
+  try {
+    const filename = req.file.filename;
+    uploadToDrive(filename);
+    res.status(200).json({ message: "Success" });
+  } catch (e) {
+    res.status(200).json({ messge: e.message });
+  }
+});
+
 app.get("/download", (req, res) => {
-   uploadToDrive("download");
-   res.redirect('/')
+  try
+  {
+    uploadToDrive("download")
+     res.status(200).json({message: "File Downloaded"})
+  }
+   catch(e){
+    res.status(404).json({message: e.message})
+   }
+  
 });
 
 const uploadToDrive = (file) => {
-  // If modifying these scopes, delete token.json.
+  let z = null;
   const SCOPES = ["https://www.googleapis.com/auth/drive"];
-  // The file token.json stores the user's access and refresh tokens, and is
-  // created automatically when the authorization flow completes for the first
-  // time.
   const TOKEN_PATH = "token.json";
-  console.log("dds", file);
   // Load client secrets from a local file.
   fs.readFile("credentials.json", (err, content) => {
     if (err) return console.log("Error loading client secret file:", err);
-    // Authorize a client with credentials, then call the Google Drive API.
-    if (file === "download") {
-      authorize(JSON.parse(content), listFiles);
-    } else {
-      authorize(JSON.parse(content), uploadFile);
-    }
-    // authorize(JSON.parse(content), getFile);
+    authorize(JSON.parse(content));
   });
 
   /**
@@ -108,7 +86,7 @@ const uploadToDrive = (file) => {
    * @param {Object} credentials The authorization client credentials.
    * @param {function} callback The callback to call with the authorized client.
    */
-  function authorize(credentials, callback) {
+  function authorize(credentials) {
     const { client_secret, client_id, redirect_uris } = credentials.installed;
     const oAuth2Client = new google.auth.OAuth2(
       client_id,
@@ -118,108 +96,119 @@ const uploadToDrive = (file) => {
 
     // Check if we have previously stored a token.
     fs.readFile(TOKEN_PATH, (err, token) => {
-      if (err) return getAccessToken(oAuth2Client, callback);
+      // if (err) return getAccessToken(oAuth2Client, callback);
       oAuth2Client.setCredentials(JSON.parse(token));
-      callback(oAuth2Client);
-    });
-  }
-
-  /**
-   * Get and store new token after prompting for user authorization, and then
-   * execute the given callback with the authorized OAuth2 client.
-   * @param {google.auth.OAuth2} oAuth2Client The OAuth2 client to get token for.
-   * @param {getEventsCallback} callback The callback for the authorized client.
-   */
-  function getAccessToken(oAuth2Client, callback) {
-    const authUrl = oAuth2Client.generateAuthUrl({
-      access_type: "offline",
-      scope: SCOPES,
-    });
-    console.log("Authorize this app by visiting this url:", authUrl);
-    const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout,
-    });
-    rl.question("Enter the code from that page here: ", (code) => {
-      rl.close();
-      oAuth2Client.getToken(code, (err, token) => {
-        if (err) return console.error("Error retrieving access token", err);
-        oAuth2Client.setCredentials(token);
-        // Store the token to disk for later program executions
-        fs.writeFile(TOKEN_PATH, JSON.stringify(token), (err) => {
-          if (err) return console.error(err);
-          console.log("Token stored to", TOKEN_PATH);
-        });
-        callback(oAuth2Client);
-      });
-    });
-  }
-
-  /**
-   * Lists the names and IDs of up to 10 files.
-   * @param {google.auth.OAuth2} auth An authorized OAuth2 client.
-   */
-  function listFiles(auth) {
-    const drive = google.drive({ version: "v3", auth });
-    drive.files.list(
-      {
-        pageSize: 10,
-        q: "name='colorised.avi'",
-        fields: "nextPageToken, files(id, name)",
-      },
-      (err, res) => {
-        if (err) return console.log("The API returned an error: " + err);
-        const files = res.data.files;
-        if (files.length) {
-          console.log("Files:", files[0].id);
-          const fileId = files[0].id;
-          getFile(auth, fileId);
-        } else {
-          console.log("No files found.");
-        }
+      if (file === "download") {
+        listFiles(oAuth2Client);
+      } else {
+        uploadFile(oAuth2Client, file);
       }
-    );
-  }
-
-  function uploadFile(auth) {
-    const drive = google.drive({ version: "v3", auth });
-    var fileMetadata = {
-      name: `${file.fieldname}.mp4`,
-    };
-    var media = {
-      mimeType: "video/mp4",
-      body: fs.createReadStream(`./public/uploads/${file.fieldname}.mp4`),
-    };
-    drive.files.create(
-      {
-        resource: fileMetadata,
-        media: media,
-        fields: "id",
-      },
-      function (err, res) {
-        if (err) {
-          // Handle error
-          console.log(err);
-        } else {
-          console.log("File Id: ", res.data.id);
-        }
-      }
-    );
-  }
-
-  function getFile(auth, fileId) {
-    const drive = google.drive({ version: "v3", auth });
-    var dest = fs.createWriteStream("./public/downloads/colorised.avi");
-    drive.files.get(
-      { fileId: fileId, fields: "*", alt: "media" },
-      { responseType: "stream" },
-      (err, res) => {
-        if (err) return console.log("The API returned an error: " + err);
-        res.data.pipe(dest);
-      }
-    );
+    });
   }
 };
 
-const port = 3000;
+// /**
+//  * Get and store new token after prompting for user authorization, and then
+//  * execute the given callback with the authorized OAuth2 client.
+//  * @param {google.auth.OAuth2} oAuth2Client The OAuth2 client to get token for.
+//  * @param {getEventsCallback} callback The callback for the authorized client.
+//  */
+// function getAccessToken(oAuth2Client, callback) {
+//   const authUrl = oAuth2Client.generateAuthUrl({
+//     access_type: "offline",
+//     scope: SCOPES,
+//   });
+//   console.log("Authorize this app by visiting this url:", authUrl);
+//   const rl = readline.createInterface({
+//     input: process.stdin,
+//     output: process.stdout,
+//   });
+//   rl.question("Enter the code from that page here: ", (code) => {
+//     rl.close();
+//     oAuth2Client.getToken(code, (err, token) => {
+//       if (err) return console.error("Error retrieving access token", err);
+//       oAuth2Client.setCredentials(token);
+//       // Store the token to disk for later program executions
+//       fs.writeFile(TOKEN_PATH, JSON.stringify(token), (err) => {
+//         if (err) return console.error(err);
+//         console.log("Token stored to", TOKEN_PATH);
+//       });
+//       callback(oAuth2Client);
+//     });
+//   });
+// }
+
+// /**
+//  * Lists the names and IDs of up to 10 files.
+//  * @param {google.auth.OAuth2} auth An authorized OAuth2 client.
+//  */
+function listFiles(auth) {
+  const drive = google.drive({ version: "v3", auth });
+  drive.files.list(
+    {
+      pageSize: 10,
+      q: "name='colorised.avi'",
+      fields: "nextPageToken, files(id, name)",
+    },
+    (err, res) => {
+      if (err) 
+        {
+          throw new Error("No file found")
+       } else{
+      const files = res.data.files;
+      if (files.length) {
+        console.log("Files:", files[0].id);
+        const fileId = files[0].id;
+        getFile(auth, fileId);
+      } else {
+        throw new Error("No file found")
+      }
+    }
+    }
+  );
+}
+
+function uploadFile(auth, file) {
+  const drive = google.drive({ version: "v3", auth });
+  var fileMetadata = {
+    name: `video-${x}.mp4`,
+  };
+  var media = {
+    mimeType: "video/mp4",
+    body: fs.createReadStream(`./public/uploads/${file}`),
+  };
+  drive.files.create(
+    {
+      resource: fileMetadata,
+      media: media,
+      fields: "id",
+    },
+    function (err, res) {
+      if (err) {
+        throw new Error(err.message);
+      } else {
+        console.log(res.data.id);
+      }
+    }
+  );
+}
+
+function getFile(auth, fileId) {
+  const drive = google.drive({ version: "v3", auth });
+  var dest = fs.createWriteStream("./public/downloads/video.avi");
+  drive.files.get(
+    { fileId: fileId, fields: "*", alt: "media" },
+    { responseType: "stream" },
+    (err, res) => {
+      if (err) {
+        throw new Error("File download Failed")
+      } else {
+        res.data.pipe(dest);
+        console.log("done");
+      }
+    }
+  );
+}
+
+const port = 5000;
 app.listen(port, () => console.log(`Server started on port ${port}`));
